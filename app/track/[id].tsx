@@ -3,10 +3,10 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, SafeAreaView, Alert, TextInput, Modal,
 } from 'react-native'
-import MapView, { Polyline, Marker } from 'react-native-maps'
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { getTrack, getTrackPoints, updateTrack, deleteTrack, type Track, type TrackPoint } from '../../src/db'
 import { fmtDistance, fmtDuration, fmtElevation, fmtDate } from '../../src/lib/format'
+import TrailMap from '../../src/components/TrailMap'
 
 const C = {
   bg: '#0d1f1a', card: '#132920', border: '#1a3328',
@@ -35,23 +35,9 @@ export default function TrackDetailScreen() {
   }, [id]))
 
   const coords = useMemo(() =>
-    points.map((p) => ({ latitude: p.lat, longitude: p.lon })),
+    points.map((p) => ({ lat: p.lat, lon: p.lon })),
     [points]
   )
-
-  const region = useMemo(() => {
-    if (coords.length === 0) return undefined
-    const lats = coords.map((c) => c.latitude)
-    const lons = coords.map((c) => c.longitude)
-    const minLat = Math.min(...lats), maxLat = Math.max(...lats)
-    const minLon = Math.min(...lons), maxLon = Math.max(...lons)
-    return {
-      latitude: (minLat + maxLat) / 2,
-      longitude: (minLon + maxLon) / 2,
-      latitudeDelta: Math.max(0.005, (maxLat - minLat) * 1.4),
-      longitudeDelta: Math.max(0.005, (maxLon - minLon) * 1.4),
-    }
-  }, [coords])
 
   function saveEdit() {
     if (!track) return
@@ -119,23 +105,11 @@ export default function TrackDetailScreen() {
         </View>
 
         {/* Map */}
-        {coords.length > 0 && region && (
-          <View style={s.mapContainer}>
-            <MapView
-              style={s.map}
-              region={region}
-              mapType="terrain"
-              showsCompass
-            >
-              <Polyline
-                coordinates={coords}
-                strokeColor="#4ade80"
-                strokeWidth={3}
-              />
-              <Marker coordinate={coords[0]} title="起点" pinColor="green" />
-              <Marker coordinate={coords[coords.length - 1]} title="终点" pinColor="red" />
-            </MapView>
-          </View>
+        {coords.length > 0 && (
+          <TrailMap
+            points={coords}
+            style={s.mapContainer}
+          />
         )}
 
         {/* Elevation mini-chart */}
@@ -292,8 +266,6 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: C.border,
     height: 260,
   },
-  map: { width: '100%', height: '100%' },
-
   elevCard: {
     marginHorizontal: 16, backgroundColor: C.card,
     borderRadius: 12, borderWidth: 1, borderColor: C.border,
